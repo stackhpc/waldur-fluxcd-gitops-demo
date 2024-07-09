@@ -23,6 +23,9 @@ data:
       - name: group-1
         machineFlavor: vm.ska.cpu.general.small
         machineCount: 3
+      - name: group-2
+        machineFlavor: vm.ska.cpu.general.eighth
+        machineCount: 1
 
     addons:
       # Use the cilium CNI
