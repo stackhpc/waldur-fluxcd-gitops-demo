@@ -22,7 +22,7 @@ data:
     nodeGroups:
       - name: group-1
         machineFlavor: vm.ska.cpu.general.small
-        machineCount: 2
+        machineCount: 3
 
     addons:
       # Use the cilium CNI
