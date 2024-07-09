@@ -14,3 +14,21 @@ data:
       create: false
     imageReflectionController:
       create: false
+
+    # NOTE: We want to ensure the Flux controllers are
+    # first to be rescheduled if nodes are experiencing
+    # resource contention / OOM issues so that we can
+    # successfully resize the cluster via changes to the
+    # source repo if required.
+
+    helmController:
+      priorityClassName: system-cluster-critical
+
+    kustomizeController:
+      priorityClassName: system-cluster-critical
+
+    sourceController:
+      priorityClassName: system-cluster-critical
+
+    notificationController:
+      priorityClassName: system-cluster-critical
