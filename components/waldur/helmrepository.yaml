@@ -1,0 +1,9 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: waldur-charts
+  namespace: waldur
+spec:
+  url: https://waldur.github.io/waldur-helm
+  interval: 1h

@@ -1,0 +1,13 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmChart
+metadata:
+  name: waldur
+  namespace: waldur
+spec:
+  chart: waldur
+  version: 6.7.3
+  sourceRef:
+    kind: HelmRepository
+    name: waldur-charts
+  interval: 1h
