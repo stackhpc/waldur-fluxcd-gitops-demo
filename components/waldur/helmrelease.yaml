@@ -9,6 +9,10 @@ spec:
     kind: HelmChart
     name: waldur
   releaseName: waldur
+  valuesFrom:
+  - kind: ConfigMap
+    name: waldur-config
+    valuesKey: values.yaml
   install:
     createNamespace: true
     remediation:

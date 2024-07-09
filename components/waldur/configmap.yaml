@@ -1,0 +1,39 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: waldur-config
+  namespace: waldur
+data:
+  values.yaml: |
+    # NOTE: This host IP must match the FIP
+    # which was assigned to the NGINX ingress
+    # controller's load balancer
+    apiHostname: 128-232-226-47.sslip.io
+    apiScheme: https
+    homeportHostname: 128-232-226-47.sslip.io
+    homeportScheme: https
+    ingress:
+      tls:
+        enabled: true
+        source: letsEncrypt
+    postgresql:
+      enabled: true
+    rabbitmq:
+      enabled: true
+
+    # Example Waldur Keycloak config
+    # waldur:
+    #   authMethods:
+    #   - LOCAL_SIGNIN
+    #   - SOCIAL_SIGNUP
+    #   socialAuthMethods:
+    #   - clientId: <keycloak-client-name>
+    #     clientSecret: <keycloak-client-secret>
+    #     discoveryUrl: <keycloak-realm-url>/.well-known/openid-configuration
+    #     label: Keycloak
+    #     managementUrl: ""
+    #     protectedFields:
+    #     - full_name
+    #     - email
+    #     provider: keycloak
