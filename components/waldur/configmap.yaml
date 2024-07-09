@@ -22,6 +22,11 @@ data:
     rabbitmq:
       enabled: true
 
+    waldur:
+      authMethods:
+      - LOCAL_SIGNIN
+      - SOCIAL_SIGNUP
+
     # Example Waldur Keycloak config
     # waldur:
     #   authMethods:
