@@ -1,0 +1,51 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: waldur-cluster-config
+  namespace: capi-self
+data:
+  values.yaml: |
+    # Must match the name of the (sealed) secret in credentials.yaml
+    cloudCredentialsSecretName: waldur-cluster-config-credentials
+
+    kubernetesVersion: 1.29.5
+    machineImageId: f08b688e-645a-4444-a811-c181bd82cc50 # == ubuntu-jammy-kube-v1.29.5-240605-0529
+
+    clusterNetworking:
+      externalNetworkId: 57add367-d205-4030-a929-d75617a7c63e
+
+    controlPlane:
+      machineFlavor: vm.ska.cpu.general.small
+      machineCount: 3
+
+    nodeGroups:
+      - name: group-1
+        machineFlavor: vm.ska.cpu.general.small
+        machineCount: 2
+
+    addons:
+      # Use the cilium CNI
+      cni:
+        type: cilium
+
+      # Settings for ingress controllers
+      ingress:
+        enabled: true
+        nginx:
+          release:
+            values:
+              controller:
+                allowSnippetAnnotations: true
+
+      # Enable the monitoring stack
+      monitoring:
+        enabled: true
+
+      # Disable NFD and the NVIDIA/Mellanox operators
+      nodeFeatureDiscovery:
+        enabled: false
+      nvidiaGPUOperator:
+        enabled: false
+      mellanoxNetworkOperator:
+        enabled: false
