@@ -12,7 +12,10 @@ spec:
   valuesFrom:
   - kind: ConfigMap
     name: waldur-config
-    valuesKey: values.yaml
+  - kind: Secret
+    name: waldur-keycloak-config
+    targetPath: waldur
+
   install:
     createNamespace: true
     remediation:
