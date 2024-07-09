@@ -14,7 +14,7 @@ spec:
     name: waldur-config
   - kind: Secret
     name: waldur-keycloak-config
-    targetPath: waldur
+    targetPath: waldur.socialAuthMethods
 
   install:
     createNamespace: true
