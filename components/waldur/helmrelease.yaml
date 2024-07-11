@@ -14,7 +14,16 @@ spec:
     name: waldur-config
   - kind: Secret
     name: waldur-keycloak-config
-    targetPath: waldur.socialAuthMethods
+    valuesKey: keycloakClientId
+    targetPath: waldur.socialAuthMethods[0].clientId
+  - kind: Secret
+    name: waldur-keycloak-config
+    valuesKey: keycloakClientSecret
+    targetPath: waldur.socialAuthMethods[0].clientSecret
+  - kind: Secret
+    name: waldur-keycloak-config
+    valuesKey: keycloakDiscoveryUrl
+    targetPath: waldur.socialAuthMethods[0].discoveryUrl
 
   install:
     createNamespace: true
