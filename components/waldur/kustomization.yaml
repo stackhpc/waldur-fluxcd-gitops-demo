@@ -4,4 +4,4 @@ resources:
   - helmchart.yaml
   - helmrelease.yaml
   - configmap.yaml
-  - secret.yaml
+  # - secret.yaml
