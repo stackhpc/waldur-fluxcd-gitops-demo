@@ -3,11 +3,11 @@
 This repository demonstrates how to deploy Waldur on top of a GitOps-managed Kubernetes cluster running on OpenStack.
 
 The tooling is based on the [capi-helm-fluxcd-config](https://github.com/stackhpc/capi-helm-fluxcd-config)
-repository as a template for GitOps-based Kubernetes clusters. See the base repo's README.md for a general
+repository as a template for GitOps-based Kubernetes clusters. See the base repo's README for a general
 introduction.
 
 This downstream repo adds some additional configuration for deploying an instance of Waldur on the provisioned
-cluster. This includes the required FluxCD Helm configuration for installing the
+cluster, which includes the required FluxCD Helm configuration for installing the
 [Waldur Helm Chart](https://artifacthub.io/packages/helm/waldur-charts/waldur) as well as some example Helm values
 for customising the Waldur installation (see `components/waldur`).
 
@@ -79,8 +79,9 @@ For a full list of available configuration options for the Kubernetes cluster, c
 [documentation](https://github.com/stackhpc/capi-helm-charts/tree/main/charts/openstack-cluster) and
 [values.yaml](https://github.com/stackhpc/capi-helm-charts/blob/main/charts/openstack-cluster/values.yaml).
 
-Once you are happy with your configuration, the cluster is ready to be deployed by following
-https://github.com/stackhpc/capi-helm-fluxcd-config/tree/main#usage.
+Once you are happy with your configuration, the Kubernetes cluster is ready to be deployed by following
+https://github.com/stackhpc/capi-helm-fluxcd-config/tree/main#usage. NOTE: It is normal for this deployment
+to take a while (e.g. 30 minutes) since there are many steps involved in the bootstrapping process.
 
 After the initial deployment, the Waldur configuration can be modified to suit your needs. The main sources for this
 config can be found in the `components/waldur/{helmrelease,configmap}.yaml` files. The Flux controllers running
@@ -93,9 +94,10 @@ requests in the repository.
 The Waldur Helm chart configuration may need to contain some sensitive values such as OIDC client secrets,
 this can pose a challenge when all of the required configuration is maintained in a remote Git repository.
 The recommended solution is to use Kubernetes [Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets).
-The following is a 'worked example' of adding Keycloak login functionality to your Waldur deployment.
+The following is a 'worked example' of adding Keycloak login functionality to your Waldur deployment while
+following recommended best practices for secure secret management.
 
-First, create a client in your Keycloak for Waldur to use - see [these](https://docs.waldur.com/admin-guide/identities/keycloak/))
+First, create a client in your Keycloak for Waldur to use - see [these](https://docs.waldur.com/admin-guide/identities/keycloak/)
 Waldur docs for detailed instructions but ignore the final section on 'Configuring Waldur', this will be done
 via the Helm values instead.
 
@@ -162,20 +164,23 @@ the PR has been reviewed and merged, Flux will notice the change to the GitHub m
 config to the live deployment.
 
 Once the PR has merged, you can check the status of the various Flux components on the remote cluster using
-`kubectl` and the kubeconfig for your cluster which should have been written to `clusters/waldur/kubeconfig`
-as part of the initial cluster deployment. For example, by running
+`kubectl` and the kubeconfig for your cluster (which should have been written to `clusters/waldur/kubeconfig`
+as part of the initial cluster deployment). For example, by running
 
 ```
 kubectl get -A gitrepositories.source.toolkit.fluxcd.io,kustomizations.kustomize.toolkit.fluxcd.io,helmreleases.helm.toolkit.fluxcd.io
 ```
 
-If the changes have synced correctly from GitHub and the `helmrelease` object is but the Waldur login UI is
-still not displaying a 'Login with Keycloak' option then you may need to restart the Waldur pods using:
+If the changes have synced correctly from GitHub and the `helmrelease` object is up to date but the Waldur
+login UI is still not displaying a 'Login with Keycloak' option then you may need to restart the Waldur
+pods using:
 
 ```
 kubectl rollout restart deployment -n waldur
 ```
 
-A similar process can be followed for any other secret/sensitive configuration options required by Waldur. \
-Any other general (i.e. non-secret) configuration should be added to the Waldur Helm chart values in
+A similar process can be followed for adding any other secret/sensitive configuration options required by
+Waldur.
+
+Any general (i.e. non-secret) configuration should be added to the Waldur Helm chart values in
 `components/waldur/configmap.yaml`.
