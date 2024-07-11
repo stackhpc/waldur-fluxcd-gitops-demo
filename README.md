@@ -171,6 +171,14 @@ as part of the initial cluster deployment). For example, by running
 kubectl get -A gitrepositories.source.toolkit.fluxcd.io,kustomizations.kustomize.toolkit.fluxcd.io,helmreleases.helm.toolkit.fluxcd.io
 ```
 
+or by using the Flux CLI:
+
+```
+flux get source git
+flux get kustomizations
+flux get helmrelease -n waldur
+```
+
 If the changes have synced correctly from GitHub and the `helmrelease` object is up to date but the Waldur
 login UI is still not displaying a 'Login with Keycloak' option then you may need to restart the Waldur
 pods using:
