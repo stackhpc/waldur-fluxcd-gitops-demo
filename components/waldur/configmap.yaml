@@ -26,19 +26,13 @@ data:
       authMethods:
       - LOCAL_SIGNIN
       - SOCIAL_SIGNUP
-
-    # Example Waldur Keycloak config
-    # waldur:
-    #   authMethods:
-    #   - LOCAL_SIGNIN
-    #   - SOCIAL_SIGNUP
-    #   socialAuthMethods:
-    #   - clientId: <keycloak-client-name>
-    #     clientSecret: <keycloak-client-secret>
-    #     discoveryUrl: <keycloak-realm-url>/.well-known/openid-configuration
-    #     label: Keycloak
-    #     managementUrl: ""
-    #     protectedFields:
-    #     - full_name
-    #     - email
-    #     provider: keycloak
+      socialAuthMethods
+      - label: Keycloak
+        provider: keycloak
+        # clientId: <stored-in-sealed-secret>
+        # clientSecret: <stored-in-sealed-secret>
+        # discoveryUrl: <stored-in-sealed-secret>
+        managementUrl: ""
+        protectedFields:
+        - full_name
+        - email
