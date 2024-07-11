@@ -22,17 +22,17 @@ data:
     rabbitmq:
       enabled: true
 
-    waldur:
-      authMethods:
-      - LOCAL_SIGNIN
-      - SOCIAL_SIGNUP
-      socialAuthMethods:
-      - label: Keycloak
-        provider: keycloak
-        # clientId: <stored-in-sealed-secret>
-        # clientSecret: <stored-in-sealed-secret>
-        # discoveryUrl: <stored-in-sealed-secret>
-        managementUrl: ""
-        protectedFields:
-        - full_name
-        - email
+    # waldur:
+    #   authMethods:
+    #   - LOCAL_SIGNIN
+    #   - SOCIAL_SIGNUP
+    #   socialAuthMethods:
+    #   - label: Keycloak
+    #     provider: keycloak
+    #     # clientId: <stored-in-sealed-secret>
+    #     # clientSecret: <stored-in-sealed-secret>
+    #     # discoveryUrl: <stored-in-sealed-secret>
+    #     managementUrl: ""
+    #     protectedFields:
+    #     - full_name
+    #     - email

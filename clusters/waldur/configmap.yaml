@@ -19,6 +19,10 @@ data:
       machineFlavor: vm.ska.cpu.general.small
       machineCount: 3
 
+    # NOTE: Waldur is surprisingly resource hungry so it is easier
+    # to start with an initially oversized cluster and scale it down
+    # later once you have confirmed via the monitoring dashboards
+    # that a smaller cluster will suffice.
     nodeGroups:
       - name: group-1
         machineFlavor: vm.ska.cpu.general.small

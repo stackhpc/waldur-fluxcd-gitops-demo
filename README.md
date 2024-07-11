@@ -1,66 +1,35 @@
-# capi-helm-fluxcd-config
+# Waldur FluxCD Demo
 
-This repository contains configuration for deploying and operating
-[Kubernetes](https://kubernetes.io/) clusters on [OpenStack](https://www.openstack.org/) using a
-[GitOps](https://about.gitlab.com/topics/gitops/) workflow.
+This repository demonstrates how to deploy Waldur on top of a GitOps-managed Kubernetes cluster running on OpenStack.
 
-The specific tools used to accomplish this are [Cluster API](https://cluster-api.sigs.k8s.io/) for
-the Kubernetes provisioning, [Flux CD](https://fluxcd.io/) for automation and
-[sealed secrets](https://github.com/bitnami-labs/sealed-secrets) for managing secrets.
+The tooling is based on the [capi-helm-fluxcd-config](https://github.com/stackhpc/capi-helm-fluxcd-config)
+repository as a template for GitOps-based Kubernetes clusters. See the base repo's README for a general
+introduction.
 
-Cluster API is a set of
-[Kubernetes operators](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) with
-associated
-[custom resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/)
-that allow Kubernetes clusters to be provisioned and operated by creating instances of those
-resources in a "management" Kubernetes cluster.
+This downstream repo adds some additional configuration for deploying an instance of Waldur on the provisioned
+cluster, which includes the required FluxCD Helm configuration for installing the
+[Waldur Helm Chart](https://artifacthub.io/packages/helm/waldur-charts/waldur) as well as some example Helm values
+for customising the Waldur installation (see `components/waldur`).
 
-The clusters created using configurations derived from this repository are "self-managed". This
-means that the Cluster API controllers and the resources defining the cluster are managed on the
-cluster itself.
+To view all of the Waldur-specific additions made to the base capi-helm-fluxcd-config repo, you can check out this
+downstream repo locally and run the following:
 
-## Bootstrapping a cluster
+```
+git clone https://github.com/stackhpc/waldur-fluxcd-gitops-demo
+git remote add upstream https://github.com/stackhpc/capi-helm-fluxcd-config
+git fetch --all
+git diff upstream/main
+```
 
-The use of self-managed clusters creates a bootstrapping problem, i.e. how does the cluster get
-created if it manages itself? The solution to this is to use a one-off bootstrapping process that
-performs the following steps:
+## Replicating this deployment example
 
-  1. Create an ephemeral Kubernetes cluster using [kind](https://kind.sigs.k8s.io/)
-  2. Use the ephemeral cluster to create the Cluster API cluster
-       * Install Flux on the ephemeral cluster
-       * Use Flux to install the Cluster API controllers on the ephemeral cluster
-       * Use Flux to create the Cluster API cluster using the ephemeral cluster
-       * Wait for the Cluster API cluster to become ready
-  3. Get the `kubeconfig` file for the Cluster API cluster
-  4. Install Flux and the Cluster API controllers on the Cluster API cluster
-  5. Move the Cluster API resources from the ephemeral cluster to the Cluster API cluster
-       * Suspend reconciliation of the Cluster API resources on the ephemeral cluster
-       * Copy the Cluster API resources to the Cluster API cluster
-       * Resume reconciliation of the Cluster API resources on the Cluster API cluster
+To deploy your own Waldur instance based on this example you should make a copy (i.e. a detached fork) of this
+repository:
 
-At this point, the cluster is self-managed. The remaining steps set the cluster up to be managed
-using Flux going forward:
-
-  6. Use Flux to install the sealed secrets controller
-  7. Seal the cluster credentials using `kubeseal`
-  8. Commit the sealed secret to git and push it
-  9. Create a Flux source pointing at the git repository
-       * If you are using git over SSH, this will generate an SSH keypair and prompt you
-         to add the public key to the git repository as a deploy key
- 10. Create a Flux kustomization pointing at the cluster configuration
-
-At this point, the cluster is self-managed using Flux and the ephemeral cluster is deleted.
-
-This repository includes [a Python script](./bin/manage) that performs these steps (see below).
-
-## Usage
-
-First, create a copy of the repository (like a fork but detached).
-
-```sh
+```
 # Clone the repository
-git clone https://github.com/stackhpc/capi-helm-fluxcd-config.git my-cluster-config
-cd my-cluster-config
+git clone https://github.com/stackhpc/waldur-fluxcd-gitops-demo.git my-waldur-deployment
+cd my-waldur-deployment
 
 # Rename the origin remote to upstream so that we can pull changes in future
 git remote rename origin upstream
@@ -70,59 +39,148 @@ git remote add origin <url>
 git push -u origin main
 ```
 
-Create a cluster configuration under the `./clusters` directory, following the
-[example](./clusters/example/).
+You should then replace the `clusters/waldur/credentials.yaml` file with your own OpenStack application
+credential for your target cloud (see [here](https://github.com/stackhpc/capi-helm-fluxcd-config/tree/main?tab=readme-ov-file#usage)
+for details). The credentials file will be encrypted as part of the initial deployment process before
+it is committed to git.
 
-As part of this process, you must create an
-[application credential](https://docs.openstack.org/keystone/latest/user/application_credentials.html)
-for the target project in OpenStack. The `credentials.yaml` file in the cluster configuration
-must then be updated with the following information:
+Once the appropriate credentials have been added, modify the following fields in
+`clusters/waldur/configmap.yaml` to match the desired flavours, images etc. for your target
+cloud:
 
-  * The OpenStack auth URL and region, which you can get from your cloud admin
-  * The ID and secret of the application credential
-  * The ID of the target project in OpenStack
-  
-During the bootstrap process, this file will be encrypted using
-[kubeseal](https://github.com/bitnami-labs/sealed-secrets) and pushed to the git repository.
-Be careful to **NEVER** commit the unencrypted version.
+```
+    # Must match the name of the (sealed) secret in credentials.yaml
+    cloudCredentialsSecretName: waldur-cluster-config-credentials
 
-Once you are happy with your cluster configuration, you can bootstrap the cluster.
+    kubernetesVersion: 1.29.5
+    machineImageId: f08b688e-645a-4444-a811-c181bd82cc50 # == ubuntu-jammy-kube-v1.29.5-240605-0529
 
-The following tools are required to execute the bootstrap script:
+    clusterNetworking:
+      externalNetworkId: 57add367-d205-4030-a929-d75617a7c63e
 
-  * [Python 3](https://www.python.org/)
-  * [git](https://git-scm.com/)
-  * [Docker](https://docs.docker.com/)
-  * [kind](https://kind.sigs.k8s.io/)
-  * [kustomize](https://kustomize.io/)
-  * [kubeseal](https://github.com/bitnami-labs/sealed-secrets?tab=readme-ov-file#kubeseal)
-  * [flux CLI](https://fluxcd.io/flux/cmd/)
+    controlPlane:
+      machineFlavor: vm.ska.cpu.general.small
+      machineCount: 3
 
-Next, create a Python environment with the required dependencies installed, e.g.:
-
-```sh
-python3 -m venv ./.venv
-source .venv/bin/activate
-pip install -U pip
-pip install -r requirements.txt
+    # NOTE: Waldur is surprisingly resource hungry so it is easier
+    # to start with an initially oversized cluster and scale it down
+    # later once you have confirmed via the monitoring dashboards
+    # that a smaller cluster will suffice.
+    nodeGroups:
+      - name: group-1
+        machineFlavor: vm.ska.cpu.general.small
+        machineCount: 3
+      - name: group-2
+        machineFlavor: vm.ska.cpu.general.eighth
+        machineCount: 1
 ```
 
-Then run the bootstrap command for the cluster that you created:
+For a full list of available configuration options for the Kubernetes cluster, consult the capi-helm-charts
+[documentation](https://github.com/stackhpc/capi-helm-charts/tree/main/charts/openstack-cluster) and
+[values.yaml](https://github.com/stackhpc/capi-helm-charts/blob/main/charts/openstack-cluster/values.yaml).
 
-```sh
-./bin/manage bootstrap my-cluster
+Once you are happy with your configuration, the Kubernetes cluster is ready to be deployed by following
+https://github.com/stackhpc/capi-helm-fluxcd-config/tree/main#usage. NOTE: It is normal for this deployment
+to take a while (e.g. 30 minutes) since there are many steps involved in the bootstrapping process.
+
+After the initial deployment, the Waldur configuration can be modified to suit your needs. The main sources for this
+config can be found in the `components/waldur/{helmrelease,configmap}.yaml` files. The Flux controllers running
+on the deployed cluster will automatically watch the target GitHub repository for changes to the main branch, so
+adding or modifying configuration options on your deployment should be done by proposing, reviewing and merging pull
+requests in the repository.
+
+## Adding secrets to the Waldur deployment
+
+The Waldur Helm chart configuration may need to contain some sensitive values such as OIDC client secrets,
+this can pose a challenge when all of the required configuration is maintained in a remote Git repository.
+The recommended solution is to use Kubernetes [Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets).
+The following is a 'worked example' of adding Keycloak login functionality to your Waldur deployment while
+following recommended best practices for secure secret management.
+
+First, create a client in your Keycloak for Waldur to use - see [these](https://docs.waldur.com/admin-guide/identities/keycloak/)
+Waldur docs for detailed instructions but ignore the final section on 'Configuring Waldur', this will be done
+via the Helm values instead.
+
+Next, run `cp components/waldur/{example-,}secret.yaml` to create a `secrets.yaml` file and then replace the
+Keycloak client name, secret and discovery URL variables with the values for your newly created Keycloak client.
+
+Overwrite the secret with a sealed secret using `kubeseal`:
+
+```
+kubeseal \
+  --kubeconfig clusters/waldur/kubeconfig \
+  --format yaml \
+  --controller-name sealed-secrets \
+  --controller-namespace sealed-secrets-system \
+  --secret-file components/waldur/secret.yaml \
+  --sealed-secret-file components/waldur/secret.yaml
 ```
 
-Once the bootstrap is complete, you will have a cluster that can be managed by making changes
-to the git repository.
+Inspecting the content of this file should now show that the secret values have been encrypted.
 
-## Accessing the cluster
+Next, configure Flux to include this sealed secret in the list of files that it watches by adding `secret.yaml`
+to the resources list in `components/waldur/kustomization.yaml`.
 
-The bootstrap process produces a `kubeconfig` file that can be used to access the cluster, which
-is written into the directory containing the cluster configuration.
+Add the following content to the `valuesFrom` list in `components/waldur/helmrelease.yaml` to tell Flux that the new
+secret should be used as a source of Helm chart values:
 
-> **WARNING**
->
-> The `kubeconfig` file is **NOT** committed to git, and if lost is difficult to recover.
->
-> It should be stored somewhere safe where it can be shared with team members who need it.
+```
+  - kind: Secret
+    name: waldur-keycloak-config
+    valuesKey: keycloakClientId
+    targetPath: waldur.socialAuthMethods[0].clientId
+  - kind: Secret
+    name: waldur-keycloak-config
+    valuesKey: keycloakClientSecret
+    targetPath: waldur.socialAuthMethods[0].clientSecret
+  - kind: Secret
+    name: waldur-keycloak-config
+    valuesKey: keycloakDiscoveryUrl
+    targetPath: waldur.socialAuthMethods[0].discoveryUrl
+```
+
+Finally, add the non-secret sections of the required Waldur config to the rest of the Helm chart values in
+`components/waldur/configmap.yaml`:
+
+```
+    waldur:
+      authMethods:
+      - LOCAL_SIGNIN
+      - SOCIAL_SIGNUP
+      socialAuthMethods:
+      - label: Keycloak
+        provider: keycloak
+        # clientId: <stored-in-sealed-secret>
+        # clientSecret: <stored-in-sealed-secret>
+        # discoveryUrl: <stored-in-sealed-secret>
+        managementUrl: ""
+        protectedFields:
+        - full_name
+        - email
+```
+
+With all of these changes made, commit them to git and propose a pull request to the remote repository. Once
+the PR has been reviewed and merged, Flux will notice the change to the GitHub main branch and apply the new
+config to the live deployment.
+
+Once the PR has merged, you can check the status of the various Flux components on the remote cluster using
+`kubectl` and the kubeconfig for your cluster (which should have been written to `clusters/waldur/kubeconfig`
+as part of the initial cluster deployment). For example, by running
+
+```
+kubectl get -A gitrepositories.source.toolkit.fluxcd.io,kustomizations.kustomize.toolkit.fluxcd.io,helmreleases.helm.toolkit.fluxcd.io
+```
+
+If the changes have synced correctly from GitHub and the `helmrelease` object is up to date but the Waldur
+login UI is still not displaying a 'Login with Keycloak' option then you may need to restart the Waldur
+pods using:
+
+```
+kubectl rollout restart deployment -n waldur
+```
+
+A similar process can be followed for adding any other secret/sensitive configuration options required by
+Waldur.
+
+Any general (i.e. non-secret) configuration should be added to the Waldur Helm chart values in
+`components/waldur/configmap.yaml`.
