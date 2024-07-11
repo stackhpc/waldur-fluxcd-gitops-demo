@@ -7,26 +7,26 @@ metadata:
 data:
   values.yaml: |
 
-    # Example config for exposing the Waldur UI
-    # via sslio.io
+    postgresql:
+      enabled: true
+    rabbitmq:
+      enabled: true
 
-    # NOTE: This host IP must match the FIP
-    # which was assigned to the NGINX ingress
-    # controller's load balancer
+    ### Example config for exposing the Waldur UI via sslio.io
+
+    # NOTE: This host IP must match the FIP which was assigned
+    # to the NGINX ingress controller's load balancer.
 
     # apiHostname: 128-232-226-47.sslip.io
     # apiScheme: https
     # homeportHostname: 128-232-226-47.sslip.io
     # homeportScheme: https
+    # ingress:
+    #   tls:
+    #     enabled: true
+    #     source: letsEncrypt
 
-    ingress:
-      tls:
-        enabled: true
-        source: letsEncrypt
-    postgresql:
-      enabled: true
-    rabbitmq:
-      enabled: true
+    ### Example config for Keycloak integration
 
     # waldur:
     #   authMethods:
