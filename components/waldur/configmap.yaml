@@ -14,8 +14,12 @@ data:
 
     ### Example config for exposing the Waldur UI via sslio.io
 
-    # NOTE: This host IP must match the FIP which was assigned
-    # to the NGINX ingress controller's load balancer.
+    # NOTE: If using sslip.io, the host IP must match the FIP
+    # which was assigned to the NGINX ingress controller's
+    # load balancer. An alternative host name may be used if
+    # an appropriate DNS entry for the load balancer's IP
+    # is added to your upstream DNS servers. It is not possible
+    # to create / manage such a DNS entry via Kubernetes.
 
     # apiHostname: 128-232-226-47.sslip.io
     # apiScheme: https

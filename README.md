@@ -89,6 +89,15 @@ on the deployed cluster will automatically watch the target GitHub repository fo
 adding or modifying configuration options on your deployment should be done by proposing, reviewing and merging pull
 requests in the repository.
 
+### Accessing the Waldur deployment
+
+By default the Waldur UI and API endpoints are not exposed outside of the Kubernetes cluster. An example of
+the required configuration for exposing the UI and API outside of the cluster using Kubernetes
+[Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) is included in
+`components/waldur/configmap.yaml`. The IP address in the example should be replaced by the
+external IP assigned to the OpenStack load balancer for the NGINX Ingress controller. This IP can be obtained
+with `kubectl get svc -n ingress-nginx ingress-nginx-controller`.
+
 ## Adding secrets to the Waldur deployment
 
 The Waldur Helm chart configuration may need to contain some sensitive values such as OIDC client secrets,
