@@ -80,7 +80,7 @@ For a full list of available configuration options for the Kubernetes cluster, c
 [values.yaml](https://github.com/stackhpc/capi-helm-charts/blob/main/charts/openstack-cluster/values.yaml).
 
 Once you are happy with your configuration, the Kubernetes cluster is ready to be deployed by following
-https://github.com/stackhpc/capi-helm-fluxcd-config/tree/main#usage. NOTE: It is normal for this deployment
+https://github.com/stackhpc/capi-helm-fluxcd-config/tree/main#usage. It is normal for this deployment
 to take a while (e.g. 30 minutes) since there are many steps involved in the bootstrapping process.
 
 After the initial deployment, the Waldur configuration can be modified to suit your needs. The main sources for this
