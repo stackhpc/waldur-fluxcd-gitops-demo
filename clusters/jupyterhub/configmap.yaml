@@ -1,0 +1,70 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jupyterhub-cluster-config
+  namespace: capi-self
+data:
+  values.yaml: |
+    # Must match the name of the (sealed) secret in credentials.yaml
+    cloudCredentialsSecretName: jupyterhub-cluster-config-credentials
+
+    kubernetesVersion: 1.29.5
+    machineImageId: f08b688e-645a-4444-a811-c181bd82cc50 # == ubuntu-jammy-kube-v1.29.5-240605-0529
+
+    clusterNetworking:
+      externalNetworkId: 57add367-d205-4030-a929-d75617a7c63e
+
+      internalNetwork:
+        # Filter to find an existing network for the cluster internal network
+        # see Cluster API documentation for details
+        networkFilter:
+          id: 1de2b690-d596-491e-96d1-21f65269cfa7
+          name: k8s-clusterapi-cluster-capi-self-waldur-cluster
+
+        # Filter to find an existing subnet for the cluster internal network
+        # See Cluster API documentation for details
+        subnetFilter:
+          id: 32a6ac88-f802-4862-ad76-bd2c08076512
+          name: k8s-clusterapi-cluster-capi-self-waldur-cluster
+        # The CIDR to use if creating a cluster network
+        # This is only used if neither of networkFilter and subnetFilter are given
+        nodeCidr: 192.168.3.0/24
+
+    controlPlane:
+      machineFlavor: vm.ska.cpu.general.small
+      machineCount: 3
+
+    nodeGroups:
+      - name: group-1
+        machineFlavor: vm.ska.cpu.general.small
+        machineCount: 2
+      # - name: group-2
+      #   machineFlavor: vm.ska.cpu.general.eighth
+      #   machineCount: 1
+
+    addons:
+      # Use the cilium CNI
+      cni:
+        type: cilium
+
+      # Settings for ingress controllers
+      ingress:
+        enabled: true
+        nginx:
+          release:
+            values:
+              controller:
+                allowSnippetAnnotations: true
+
+      # Enable the monitoring stack
+      monitoring:
+        enabled: true
+
+      # Disable NFD and the NVIDIA/Mellanox operators
+      nodeFeatureDiscovery:
+        enabled: false
+      nvidiaGPUOperator:
+        enabled: false
+      mellanoxNetworkOperator:
+        enabled: false
