@@ -9,9 +9,9 @@ spec:
     kind: HelmChart
     name: jupyterhub
   releaseName: jupyterhub
-  # valuesFrom:
-  # - kind: ConfigMap
-  #   name: waldur-config
+  valuesFrom:
+  - kind: ConfigMap
+    name: jupyterhub-config
   # - kind: Secret
   #   name: waldur-keycloak-config
   #   valuesKey: keycloakClientId

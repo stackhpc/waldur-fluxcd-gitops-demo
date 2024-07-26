@@ -6,11 +6,45 @@ metadata:
   namespace: jupyterhub
 data:
   values.yaml: | 
-    apiHostname: 128-232-227-49.sslip.io
-    apiScheme: https
-    homeportHostname: 128-232-227-49.sslip.io
-    homeportScheme: https
+    prePuller:
+      hook:
+        enabled: false
+      continuous:
+        enabled: false
+
     ingress:
-      tls:
-        enabled: true
-        source: letsEncrypt
+      enabled: true
+      hosts:
+        - 128-232-227-49.sslip.io
+
+    proxy:
+      service:
+        type: ClusterIP
+      chp:
+        networkPolicy:
+          enabled: false
+
+    hub:
+      networkPolicy:
+        enabled: false
+      extraConfig:
+        # Until https://github.com/jupyterhub/kubespawner/issues/498 is fixed
+        # https://discourse.jupyter.org/t/advanced-z2jh-deeply-customizing-the-spawner/8432
+        customspawner.py: |
+          from kubespawner import KubeSpawner
+
+          class CustomSpawner(KubeSpawner):
+              def _build_common_labels(self, extra_labels):
+                  labels = super()._build_common_labels(extra_labels)
+                  label_username = "jupyter-" + labels['hub.jupyter.org/username']
+                  labels['hub.jupyter.org/username'] = label_username
+                  return labels
+
+          c.JupyterHub.spawner_class = CustomSpawner
+
+    singleuser:
+      networkPolicy:
+        enabled: false
+      defaultUrl: /lab
+      extraEnv:
+        JUPYTERHUB_SINGLEUSER_APP: "jupyter_server.serverapp.ServerApp"
