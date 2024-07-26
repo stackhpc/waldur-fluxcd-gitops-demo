@@ -3,7 +3,7 @@ resources:
   - ../../components/sealed-secrets
   - ../../components/cluster-api
   - ../../components/cluster
-  #- ../../components/jupyterhub
+  - ../../components/jupyterhub
   - configmap.yaml
   - credentials.yaml
 

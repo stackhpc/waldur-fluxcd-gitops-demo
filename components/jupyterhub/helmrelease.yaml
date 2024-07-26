@@ -1,0 +1,40 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: jupyterhub
+  namespace: jupyterhub
+spec:
+  chartRef:
+    kind: HelmChart
+    name: jupyterhub
+  releaseName: jupyterhub
+  # valuesFrom:
+  # - kind: ConfigMap
+  #   name: waldur-config
+  # - kind: Secret
+  #   name: waldur-keycloak-config
+  #   valuesKey: keycloakClientId
+  #   targetPath: waldur.socialAuthMethods[0].clientId
+  # - kind: Secret
+  #   name: waldur-keycloak-config
+  #   valuesKey: keycloakClientSecret
+  #   targetPath: waldur.socialAuthMethods[0].clientSecret
+  # - kind: Secret
+  #   name: waldur-keycloak-config
+  #   valuesKey: keycloakDiscoveryUrl
+  #   targetPath: waldur.socialAuthMethods[0].discoveryUrl
+
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  driftDetection:
+    mode: enabled
+  interval: 5m
+  # Waldur DB migrations during install/upgrade
+  # can take a while so increase install timeout
+  timeout: 60m

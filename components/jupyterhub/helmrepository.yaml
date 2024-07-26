@@ -1,0 +1,9 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: jupyterhub
+  namespace: jupyterhub
+spec:
+  url: https://jupyterhub.github.io/helm-chart
+  interval: 1h

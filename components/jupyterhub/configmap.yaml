@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jupyterhub-config
+  namespace: jupyterhub
+data:
+  values.yaml: | 
+    apiHostname: 128-232-227-49.sslip.io
+    apiScheme: https
+    homeportHostname: 128-232-227-49.sslip.io
+    homeportScheme: https
+    ingress:
+      tls:
+        enabled: true
+        source: letsEncrypt
