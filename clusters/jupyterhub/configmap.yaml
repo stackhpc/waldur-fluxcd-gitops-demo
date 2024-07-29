@@ -33,15 +33,15 @@ data:
 
     controlPlane:
       machineFlavor: vm.ska.cpu.general.small
-      machineCount: 3
+      machineCount: 4
 
     nodeGroups:
       - name: group-1
         machineFlavor: vm.ska.cpu.general.small
         machineCount: 2
-      # - name: group-2
-      #   machineFlavor: vm.ska.cpu.general.eighth
-      #   machineCount: 1
+      - name: group-2
+        machineFlavor: vm.ska.cpu.general.eighth
+        machineCount: 1
 
     addons:
       # Use the cilium CNI
@@ -61,10 +61,10 @@ data:
       monitoring:
         enabled: true
 
-      # Disable NFD and the NVIDIA/Mellanox operators
-      nodeFeatureDiscovery:
-        enabled: false
-      nvidiaGPUOperator:
-        enabled: false
-      mellanoxNetworkOperator:
-        enabled: false
+      # # Disable NFD and the NVIDIA/Mellanox operators
+      # nodeFeatureDiscovery:
+      #   enabled: false
+      # nvidiaGPUOperator:
+      #   enabled: false
+      # mellanoxNetworkOperator:
+      #   enabled: false
