@@ -15,7 +15,7 @@ data:
     ingress:
       enabled: true
       hosts:
-        - 128-232-227-49.sslip.io
+        - 128-232-226-202.sslip.io
 
     proxy:
       service:
