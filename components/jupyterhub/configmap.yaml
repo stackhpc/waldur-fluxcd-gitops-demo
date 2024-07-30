@@ -14,8 +14,14 @@ data:
 
     ingress:
       enabled: true
+      annotations:
+        kubernetes.io/ingress.class: nginx
       hosts:
         - 128-232-226-202.sslip.io
+      # tls:
+      # - hosts:
+      #   - 128-232-226-202.sslip.io
+      #   secretName: jupyterhub-cluster-tls
 
     proxy:
       service:
@@ -23,8 +29,13 @@ data:
       chp:
         networkPolicy:
           enabled: false
+      https:
+        enabled: true
+        type: letsencrypt
+      # hosts:
+      #   - 128-232-226-202.sslip.io
 
-    hub:
+    hub:      
       networkPolicy:
         enabled: false
       extraConfig:
@@ -41,6 +52,27 @@ data:
                   return labels
 
           c.JupyterHub.spawner_class = CustomSpawner
+
+      config:
+        GenericOAuthenticator:
+          client_id: AgCNeolTHqSjFSRI+jJEJk2kvgxnGF8A/dXcNxjAU2Y9rcK3wqY1xMIvP+4Pk9Pbr4BhQ/YM7Y5yvg2JS9Jx5M6hoE1LnJpWLTNdwOSud1Jgmj0UPKos690ZZHB8ZVcE4BtL4DdCon1J3nO9hJASUIHZqAXQZlvL/gJ6JjgUdxNQ/DIlN93P/+lhIDg7Omdgy4bpvLR3b+9XfLMTQuXrj7njceUay9+2BpWF+EtAealF7srhW9b1C3NrAlVGJk/h4Kia2W+b/R4gY+h1xkqtfYoFCt04sgSd2DK1WTLcn94KgBWKO15TfD/L9BNK6JSG1as5ewFrqsvnoJBwJhrHZttoN125ikWP19CjFmKQ0mtYshXv0aTw38AA827q2c7KFoCDPOTnSK8jYGt/HSF1Su4MyRxEt0WGdTT63543j4cnLbkulW8qIrHzvCN53kTYS17xkMcxTlf9npeuIRjpRaX2FJdh4Ge+vJw1iPCq/o+nCYLqKGVJDjK9z76BgjR1yGflbVjRhjJOmASd97beo4tM3P3MSHrgchfTon8iiIbvKQryfG8YKejLtHm6pGn5A9S5t2DF+2V+gpECXlC/8+n9p/gBE9dnFar001IT0QqpRlW/8SseFgfc/aryZoIY8HV4bsfnOvD0g13me8itrsL5aTblzymznEm1ryk3PFebjzPELlKHM/ivAHa0xbf0+x0086hXYLFAI3MgbNagrcaCz7dp7u48
+          client_secret: AgDLv9khNAjfVAHfLbMTDA2yAku23lrtAawNJV7CmyTlb1caSC2AIaIFWKNCV3hA1+94bBTXXMpQLCG445zoeHa1vMcxz2hOEaI38lr02zy+goOZGvL6CIkGpAoxAVRaInjwTjhA5uYe4Az4vIwDqgdYa08S+AsUhB6gOc0KdeY49bagmRLCOAOOxg0Tc8yTFF01IJQXcS/NV6uWj2XAPhPyfC/g0rE27UdcS7ZePc5OEDmxiW+tfIkOnxwmIdVBKjpi85kn0tp1xiZK/TnO4d5ugVFQzWAmzSEJy3b7mtcY+V7E2p7gPcSiloLAyrcIoge9UVaMXV/OvMqCHandNaaRB68aWLh9uivO0US2vA2hbjMScFEEMRNAbHYKsZczNSltiMFrPSziOKhUFPnXNCjZc6jKevvlQi6V0jCQQOrbDGbHkfIiO5cxZOBCUtkN93An67jnvw8+IQML3V0NdENhjQhCwvGq4bXOlOQqmIN5bEENnStq35D/QZKjz+aESjCRyZJsP5hEUDbn38vNM31SS2EW3GN7GfkiiNtCZLVEgO49AMNqJ5Xuhnzl1o74/oSJKnSvbmdITf81/pN8UQiZHVcL34iQ7cR0ToPUYPtFUuLY/KpLtSpzPcIec0/+EL9YwRdFjp1sA+iLmz+EkdXiDEUmQtdfTZhY42pB9ZC5fwW6SczG6Py75ZWNhexdiJ4KV3cKbomI0FV3eQqXr2nOjfC57YGLD2w=
+          oauth_callback_url: https://128-232-226-202.sslip.io/hub/oauth_callback
+          authorize_url: https://identity.apps.hpc.cam.ac.uk/realms/az-rcp-cloud-portal-demo/protocol/openid-connect/auth
+          token_url: https://identity.apps.hpc.cam.ac.uk/realms/az-rcp-cloud-portal-demo/protocol/openid-connect/token
+          userdata_url: https://identity.apps.hpc.cam.ac.uk/realms/az-rcp-cloud-portal-demo/protocol/openid-connect/userinfo
+          login_service: keycloak
+          username_claim: sub
+          userdata_params:
+            state: state
+          # In order to use keycloak client's roles as authorization layer
+          claim_groups_key: roles
+          allowed_groups:
+            - user
+          admin_groups:
+            - admin
+        JupyterHub:
+          authenticator_class: generic-oauth
 
     singleuser:
       networkPolicy:

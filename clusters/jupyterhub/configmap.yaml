@@ -51,30 +51,23 @@ data:
       # Settings for ingress controllers
       ingress:
         enabled: true
-        metadata:
-          annotations:
-            kubernetes.io/ingress.class: nginx
-          tls:
-          - hosts:
-            - 128-232-226-202.sslip.io
-            secretName: jupyterhub-cluster-tls
         nginx:
           release:
             values:
               controller:
                 allowSnippetAnnotations: true
-                # watchIngressWithoutClass: true
-                # ingressClassResource:
-                #   default: true
+                watchIngressWithoutClass: true
+                ingressClassResource:
+                  default: true
 
       # Enable the monitoring stack
       monitoring:
         enabled: true
 
-      # # Disable NFD and the NVIDIA/Mellanox operators
-      # nodeFeatureDiscovery:
-      #   enabled: false
-      # nvidiaGPUOperator:
-      #   enabled: false
-      # mellanoxNetworkOperator:
-      #   enabled: false
+      # Disable NFD and the NVIDIA/Mellanox operators
+      nodeFeatureDiscovery:
+        enabled: false
+      nvidiaGPUOperator:
+        enabled: false
+      mellanoxNetworkOperator:
+        enabled: false
