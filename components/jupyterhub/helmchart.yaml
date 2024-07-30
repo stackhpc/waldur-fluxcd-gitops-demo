@@ -10,5 +10,5 @@ spec:
   sourceRef:
     kind: HelmRepository
     name: jupyterhub
-  interval: 10m0s
+  interval: 1m0s
 #  url: https://jupyterhub.github.io/helm-chart

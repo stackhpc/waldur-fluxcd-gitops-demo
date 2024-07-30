@@ -4,3 +4,4 @@ resources:
   - helmrepository.yaml
   - helmchart.yaml
   - helmrelease.yaml
+  - clusterissuer.yaml

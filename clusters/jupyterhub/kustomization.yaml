@@ -7,6 +7,7 @@ resources:
   - configmap.yaml
   - credentials.yaml
 
+
 # Patch the Helm release for the cluster to update the release name
 #   This ensures we get nicely named resources in OpenStack
 # We also add our configmap to the values sources for the release

@@ -10,4 +10,4 @@ spec:
   sourceRef:
     kind: HelmRepository
     name: jetstack
-  interval: 1h
+  interval: 60s
