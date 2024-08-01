@@ -1,0 +1,5 @@
+resources:
+  - clusterissuer.yaml
+
+# bases:
+#   - ../cert-manager

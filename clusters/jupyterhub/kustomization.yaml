@@ -4,8 +4,10 @@ resources:
   - ../../components/cluster-api
   - ../../components/cluster
   - ../../components/jupyterhub
+  - ../../components/cluster-issuer
   - configmap.yaml
   - credentials.yaml
+
 
 
 # Patch the Helm release for the cluster to update the release name
