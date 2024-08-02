@@ -11,7 +11,7 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: ../cert-manager
+  path: ../../components/cert-manager
   prune: true
   wait: true
 ---
@@ -29,7 +29,7 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: ../cluster-issuer
+  path: ../../components/cluster-issuer
   prune: true
   patches:
     - patch: |
