@@ -10,7 +10,7 @@ resources:
   # boostrapping process will attempt to install
   # them on the kind cluster or encounter other
   # ordering issues
-  # - ../../components/jupyterhub
+  - ../../components/jupyterhub
   - ../../components/cert-manager/issuers.yaml
 
 
