@@ -108,7 +108,7 @@ data:
             config.load_incluster_config()
             api = client.CoreV1Api()
             nodes = api.list_node().items
-            has_gpu = lambda node: ("nvidia.com/gpu", "true") in node.metadata.labels.items()
+            has_gpu = lambda node: node.metadata.labels.get("nvidia.com/gpu.present", "") == "true"
             if any(map(has_gpu, nodes)):
               profiles.append({
                 "display_name": "Pytorch environment",
