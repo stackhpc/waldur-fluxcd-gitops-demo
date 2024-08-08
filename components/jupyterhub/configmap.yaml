@@ -26,7 +26,7 @@ data:
         # IP must match NGINX ingress controller's
         # load balancer IP.
         # See `kubectl get svc -n ingress-nginx`
-        - &host 128-232-226-8.sslip.io
+        - &host 128-232-226-29.sslip.io
       pathSuffix: ""
       tls:
         - hosts:
@@ -50,7 +50,7 @@ data:
           client_id: scott-jupyterhub-test
           # client_secret: <stored-in-sealed-secret>
           # Must match ingress host
-          oauth_callback_url: https://128-232-226-8.sslip.io/hub/oauth_callback
+          oauth_callback_url: https://128-232-226-29.sslip.io/hub/oauth_callback
           authorize_url: https://identity.apps.hpc.cam.ac.uk/realms/az-rcp-cloud-portal-demo/protocol/openid-connect/auth
           token_url: https://identity.apps.hpc.cam.ac.uk/realms/az-rcp-cloud-portal-demo/protocol/openid-connect/token
           userdata_url: https://identity.apps.hpc.cam.ac.uk/realms/az-rcp-cloud-portal-demo/protocol/openid-connect/userinfo

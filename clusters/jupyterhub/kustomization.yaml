@@ -5,13 +5,6 @@ resources:
   - ../../components/cluster
   - configmap.yaml
   - credentials.yaml
-  # Uncomment these additional components after
-  # cluster has been bootstrapped, otherwise the
-  # boostrapping process will attempt to install
-  # them on the kind cluster or encounter other
-  # ordering issues
-  - ../../components/jupyterhub
-  - ../../components/cert-manager/issuers.yaml
 
 
 # Patch the Helm release for the cluster to update the release name

@@ -3,7 +3,6 @@ resources:
   - ../../components/sealed-secrets
   - ../../components/cluster-api
   - ../../components/cluster
-  - ../../components/waldur
   - configmap.yaml
   - credentials.yaml
 
