@@ -1,0 +1,162 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jupyterhub-config
+  namespace: jupyterhub
+data:
+  values.yaml: |
+
+    # Add JupyterHub customisations here
+    # See https://artifacthub.io/packages/helm/jupyterhub/jupyterhub
+
+    # We don't need a load balancer for the proxy
+    # since we want to use ingress instead.
+    proxy:
+      service:
+        type: ClusterIP
+
+    # Make JupyterHub accessible via ingress
+    ingress:
+      enabled: true
+      ingressClassName: nginx
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-prod
+      hosts:
+        # IP must match NGINX ingress controller's
+        # load balancer IP.
+        # See `kubectl get svc -n ingress-nginx`
+        - &host 128-232-226-8.sslip.io
+      pathSuffix: ""
+      tls:
+        - hosts:
+          - *host
+          secretName: jupyterhub-ingress-cert
+
+    hub:
+      allowNamedServers: true
+      namedServerLimitPerUser: 5
+      activeServerLimit: 3
+      # Server startup fails with default
+      # restrictive network policy.
+      networkPolicy:
+        enabled: false
+
+      # Configure Keycloak auth
+      config:
+        JupyterHub:
+          authenticator_class: generic-oauth
+        GenericOAuthenticator:
+          client_id: scott-jupyterhub-test
+          # client_secret: <stored-in-sealed-secret>
+          # Must match ingress host
+          oauth_callback_url: https://128-232-226-8.sslip.io/hub/oauth_callback
+          authorize_url: https://identity.apps.hpc.cam.ac.uk/realms/az-rcp-cloud-portal-demo/protocol/openid-connect/auth
+          token_url: https://identity.apps.hpc.cam.ac.uk/realms/az-rcp-cloud-portal-demo/protocol/openid-connect/token
+          userdata_url: https://identity.apps.hpc.cam.ac.uk/realms/az-rcp-cloud-portal-demo/protocol/openid-connect/userinfo
+          scope:
+          - openid
+          - groups
+          username_claim: preferred_username
+          claim_groups_key: groups
+          userdata_params:
+            state: state
+
+          # Limit access to specific keycloak groups
+          allowed_groups:
+          - /admins
+          - /platform-users
+
+          # Allow hub admin access to keycloak users/groups
+          # admin_groups:
+          # - /admins
+          admin_users:
+          - scottd_stack
+
+          # Label for the 'Sign in with ___' button
+          login_service: Keycloak
+
+      # We install the kubernetes client here so that we can use it to
+      # detect weather the cluster has any GPU nodes, allowing us to show/hide
+      # GPU nodebook profiles automatically.
+      args:
+        - bash
+        - -c
+        - "pip install kubernetes && jupyterhub --config /usr/local/etc/jupyterhub/jupyterhub_config.py --upgrade-db"
+      extraConfig:
+        # Add user profiles dynamically based on cluster hardware
+        customspawner.py: |
+          from kubespawner import KubeSpawner
+          from kubernetes import client, config
+
+          def build_profiles(spawner: KubeSpawner):
+            profiles = [
+              {
+                "display_name": "Minimal environment",
+                "description": "To avoid too much bells and whistles: Python.",
+                "default": True,
+              },
+              {
+                "display_name": "Datascience environment",
+                "description": "If you want the additional bells and whistles: Python, R, and Julia.",
+                "kubespawner_override": {
+                  "image": "quay.io/jupyter/datascience-notebook:2024-08-05"
+                },
+              },
+            ]
+
+            config.load_incluster_config()
+            api = client.CoreV1Api()
+            nodes = api.list_node().items
+            has_gpu = lambda node: node.metadata.labels.get("nvidia.com/gpu.present", "") == "true"
+            if any(map(has_gpu, nodes)):
+              profiles.append({
+                "display_name": "Pytorch environment",
+                "description": "The official Jupyter Pytorch + CUDA image. Requires a GPU compatible notebook server.",
+                "kubespawner_override": {
+                  "image": "quay.io/jupyter/pytorch-notebook:cuda12-pytorch-2.4.0",
+                  "extra_resource_limits": {
+                    "nvidia.com/gpu": "1",
+                  },
+                },
+              })
+            else:
+              profiles.append({
+                "display_name": "Pytorch environment",
+                "description": "The official Jupyter Pytorch.",
+                "kubespawner_override": {
+                  "image": "quay.io/jupyter/pytorch-notebook:pytorch-2.4.0",
+                },
+              })
+
+            return profiles
+
+          c.KubeSpawner.profile_list = build_profiles
+
+    # Pre-pullers are not useful when profile list
+    # is built dynamically
+    prePuller:
+      hook:
+        enabled: false
+      continuous:
+        enabled: false
+
+    singleuser:
+      defaultUrl: /lab
+      # Defines the default image
+      image:
+        name: quay.io/jupyter/minimal-notebook
+        tag: "2024-08-05"
+      # Build these dynamically in extraConfig above instead
+      # profileList:
+      #   - display_name: "Minimal environment"
+      #     description: "To avoid too much bells and whistles: Python."
+      #     default: true
+      #   - display_name: "Datascience environment"
+      #     description: "If you want the additional bells and whistles: Python, R, and Julia."
+      #     kubespawner_override:
+      #       image: quay.io/jupyter/datascience-notebook:2024-08-05
+      #   - display_name: "Spark environment"
+      #     description: "The Jupyter Stacks spark image!"
+      #     kubespawner_override:
+      #       image: quay.io/jupyter/all-spark-notebook:2024-08-05

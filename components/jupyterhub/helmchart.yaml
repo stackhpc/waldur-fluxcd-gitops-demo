@@ -1,0 +1,13 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmChart
+metadata:
+  name: jupyterhub
+  namespace: jupyterhub
+spec:
+  chart: jupyterhub
+  version: "3.3.8"
+  sourceRef:
+    kind: HelmRepository
+    name: jupyterhub
+  interval: 10m0s
