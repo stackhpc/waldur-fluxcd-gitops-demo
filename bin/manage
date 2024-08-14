@@ -65,7 +65,7 @@ def exec(*cmd, **kwargs):
         raise RuntimeError(exc.stderr)
     else:
         return proc.stdout.decode().strip()
-    
+
 
 async def ekwait(ekresource, name, namespace, predicate):
     """
@@ -140,11 +140,11 @@ class ObjectGraph:
             ref["uid"]
             for ref in obj.metadata.get("ownerReferences", [])
         )
-    
+
     def __iter__(self):
         """
         Iterate over the graph.
-        
+
         Objects are only yielded once all their owners have been yielded.
         """
         seen, pending = set(), set(self.nodes.keys())
@@ -282,7 +282,7 @@ def kind_cluster():
         ek_client = easykube.Configuration.from_kubeconfig(kubeconfig.name).async_client()
 
         yield helm_client, ek_client
-        
+
         # If the task executes without error, tear down the kind cluster
         # If not, we leave it behind for debugging
         exec("kind", "delete", "cluster")
@@ -632,6 +632,21 @@ async def bootstrap(cluster):
             "--interval", "5m",
             "--timeout", "5m"
         )
+        # Configure a separate kustomization to install and manage the extra
+        # resources which should only be installed on the CAPI cluster
+        if (REPO_ROOT / "clusters" / cluster / "extras").exists():
+            exec(
+                "flux",
+                "create",
+                "kustomization",
+                f"{cluster}-extras",
+                "--kubeconfig", kubeconfig_capi,
+                "--source", f"GitRepository/{cluster}",
+                "--path", f"./clusters/{cluster}/extras",
+                "--prune",
+                "--interval", "5m",
+                "--timeout", "5m"
+            )
 
 
 @manage.command()
