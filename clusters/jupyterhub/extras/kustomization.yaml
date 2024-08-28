@@ -6,3 +6,4 @@
 resources:
   - ../../../components/jupyterhub
   - ../../../components/cert-manager/issuers.yaml
+  - ../../../components/spegel
