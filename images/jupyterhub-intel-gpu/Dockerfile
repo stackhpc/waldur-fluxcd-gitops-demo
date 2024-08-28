@@ -42,7 +42,8 @@ RUN apt-get update && \
 RUN wget -qO - https://repositories.intel.com/gpu/intel-graphics.key | \
     gpg --dearmor --yes --output /usr/share/keyrings/intel-graphics.gpg
 RUN echo "deb [arch=amd64 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu jammy unified" | \
-    tee /etc/apt/sources.list.d/intel-gpu-jammy.list
+    tee /etc/apt/sources.list.d/intel-gpu-jammy.list &&\
+    apt update
 
 ARG ICD_VER=24.22.29735.27-914~22.04
 ARG LEVEL_ZERO_GPU_VER=1.3.29735.27-914~22.04
@@ -56,7 +57,7 @@ RUN apt-get update && \
     libze1=${LEVEL_ZERO_VER} \
     libze-dev=${LEVEL_ZERO_DEV_VER} && \
     apt-get clean && \
-    rm -rf  /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/*
 
 RUN wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
    | gpg --dearmor | tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null && \
