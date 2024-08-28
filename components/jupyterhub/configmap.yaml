@@ -135,7 +135,7 @@ data:
                 "display_name": "Pytorch environment (Intel GPU)",
                 "description": "A Jupyter + Intel Pytorch image. Requires a GPU compatible notebook server.",
                 "kubespawner_override": {
-                  "image": "sd327/jupyterhub-pytorch-intel-gpu:latest",
+                  "image": "ghcr.io/stackhpc/jupyterhub-pytorch-intel-gpu:v0.0.1",
                   "extra_resource_limits": {
                     "gpu.intel.com/i915": "1",
                   },
