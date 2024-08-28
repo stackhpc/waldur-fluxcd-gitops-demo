@@ -14,7 +14,7 @@ data:
 
     # Give ourselves a backdoor in case we break
     # things during development and testing.
-    machineSSHKeyName: scott-key                                                                                                                                                                                                                                        │
+    machineSSHKeyName: scott-key
 
     clusterNetworking:
       externalNetworkId: 57add367-d205-4030-a929-d75617a7c63e
