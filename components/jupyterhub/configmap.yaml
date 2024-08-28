@@ -103,15 +103,25 @@ data:
                   "image": "quay.io/jupyter/datascience-notebook:2024-08-05"
                 },
               },
+              {
+                "display_name": "Pytorch environment (CPU)",
+                "description": "The official Jupyter Pytorch.",
+                "kubespawner_override": {
+                  "image": "quay.io/jupyter/pytorch-notebook:pytorch-2.4.0",
+                },
+              },
             ]
 
             config.load_incluster_config()
             api = client.CoreV1Api()
             nodes = api.list_node().items
-            has_gpu = lambda node: node.metadata.labels.get("nvidia.com/gpu.present", "") == "true"
-            if any(map(has_gpu, nodes)):
+
+            has_nvidia_gpu = lambda node: node.metadata.labels.get("nvidia.com/gpu.present", "") == "true"
+            has_intel_gpu = lambda node: node.metadata.labels.get("gpu.intel.com/device-id.0380-0bd5.present", "") == "true"
+
+            if any(map(has_nvidia_gpu, nodes)):
               profiles.append({
-                "display_name": "Pytorch environment",
+                "display_name": "Pytorch environment (Nvidia GPU)",
                 "description": "The official Jupyter Pytorch + CUDA image. Requires a GPU compatible notebook server.",
                 "kubespawner_override": {
                   "image": "quay.io/jupyter/pytorch-notebook:cuda12-pytorch-2.4.0",
@@ -120,12 +130,18 @@ data:
                   },
                 },
               })
-            else:
+            if any(map(has_intel_gpu, nodes)):
               profiles.append({
-                "display_name": "Pytorch environment",
-                "description": "The official Jupyter Pytorch.",
+                "display_name": "Pytorch environment (Intel GPU)",
+                "description": "A Jupyter + Intel Pytorch image. Requires a GPU compatible notebook server.",
                 "kubespawner_override": {
-                  "image": "quay.io/jupyter/pytorch-notebook:pytorch-2.4.0",
+                  "image": "sd327/jupyterhub-pytorch-intel-gpu:latest",
+                  "extra_resource_limits": {
+                    "gpu.intel.com/i915": "1",
+                  },
+                  "supplemental_gids":[
+                    "110", # Ubuntu render group GID, requred for permission to use Intel GPU device
+                  ],
                 },
               })
 
