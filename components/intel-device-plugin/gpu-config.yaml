@@ -1,0 +1,14 @@
+apiVersion: deviceplugin.intel.com/v1
+kind: GpuDevicePlugin
+metadata:
+  name: gpudeviceplugin-sample
+spec:
+  image: intel/intel-gpu-plugin:0.30.0
+  sharedDevNum: 1
+  preferredAllocationPolicy: none
+  logLevel: 4
+  enableMonitoring: true
+  nodeSelector:
+    # non-existent: used-to-remove-from-all-nodes
+    gpu.intel.com/product: Max_1550
+

@@ -25,3 +25,5 @@ patches:
           kind: ConfigMap
           name: jupyterhub-cluster-config
           valuesKey: values.yaml
+
+# TODO: Add control plane toleration for critical Flux / CAPI deployments here?
