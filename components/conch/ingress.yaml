@@ -1,0 +1,26 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: conch
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod-issuer
+    meta.helm.sh/release-name: conch
+    meta.helm.sh/release-namespace: default
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - ca.128-232-226-118.sslip.io
+    secretName: conch-signing-key-secret
+  rules:
+  - host: ca.128-232-226-118.sslip.io
+    http:
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: conch
+              port:
+                number: 80

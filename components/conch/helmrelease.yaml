@@ -1,0 +1,28 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: conch
+  namespace: conch-fluxcd
+spec:
+  chartRef:
+    kind: HelmChart
+    name: conch
+  releaseName: conch
+  valuesFrom:
+  - kind: ConfigMap
+    name: conch-config
+
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  driftDetection:
+    mode: enabled
+  interval: 5m
+  # Waldur DB migrations during install/upgrade
+  # can take a while so increase install timeout
+  timeout: 60m

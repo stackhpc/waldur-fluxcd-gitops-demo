@@ -1,0 +1,10 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: conch
+  namespace: conch-fluxcd
+spec:
+  type: "oci"
+  url: oci://ghcr.io/isambard-sc/charts/conch
+  interval: 5m0s # Default was 1h

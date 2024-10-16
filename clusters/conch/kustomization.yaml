@@ -17,13 +17,11 @@ patches:
     patch: |-
       - op: replace
         path: /spec/releaseName
-        value: jupyterhub-cluster-scott
+        value: conch-pod
 
       - op: add
         path: /spec/valuesFrom/-
         value:
           kind: ConfigMap
-          name: jupyterhub-cluster-config
+          name: conch-pod-config
           valuesKey: values.yaml
-
-# TODO: Add control plane toleration for critical Flux / CAPI deployments here?
