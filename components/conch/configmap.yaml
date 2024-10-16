@@ -1,0 +1,43 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: conch-config
+  namespace: conch
+data:
+  values.yaml: |
+
+    ### Example config for exposing the Waldur UI via sslio.io
+
+    # NOTE: If using sslip.io, the host IP must match the FIP
+    # which was assigned to the NGINX ingress controller's
+    # load balancer. An alternative host name may be used if
+    # an appropriate DNS entry for the load balancer's IP
+    # is added to your upstream DNS servers. It is not possible
+    # to create / manage such a DNS entry via Kubernetes.
+
+    # apiHostname: 128-232-226-47.sslip.io
+    # apiScheme: https
+    # homeportHostname: 128-232-226-47.sslip.io
+    # homeportScheme: https
+    # ingress:
+    #   tls:
+    #     enabled: true
+    #     source: letsEncrypt
+
+    ### Example config for Keycloak integration
+
+    # waldur:
+    #   authMethods:
+    #   - LOCAL_SIGNIN
+    #   - SOCIAL_SIGNUP
+    #   socialAuthMethods:
+    #   - label: Keycloak
+    #     provider: keycloak
+    #     # clientId: <stored-in-sealed-secret>
+    #     # clientSecret: <stored-in-sealed-secret>
+    #     # discoveryUrl: <stored-in-sealed-secret>
+    #     managementUrl: ""
+    #     protectedFields:
+    #     - full_name
+    #     - email

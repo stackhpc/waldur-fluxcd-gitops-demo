@@ -1,0 +1,7 @@
+# These components will only be installed on the CAPI
+# cluster after initial boostrapping is complete.
+# This allows components which can't / shouldn't be
+# installed on the ephemeral kind cluster to also be
+# set up during bootstrapping.
+resources:
+  - ../../../components/conch

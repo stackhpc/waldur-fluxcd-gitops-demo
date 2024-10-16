@@ -1,0 +1,106 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jupyterhub-cluster-config
+  namespace: capi-self
+data:
+  values.yaml: |
+    # Must match the name of the (sealed) secret in credentials.yaml
+    cloudCredentialsSecretName: jupyterhub-cluster-config-credentials
+
+    kubernetesVersion: 1.29.5
+    machineImageId: f08b688e-645a-4444-a811-c181bd82cc50 # == ubuntu-jammy-kube-v1.29.5-240605-0529
+
+    # Give ourselves a backdoor in case we break
+    # things during development and testing.
+    machineSSHKeyName: scott-key
+
+    clusterNetworking:
+      externalNetworkId: 57add367-d205-4030-a929-d75617a7c63e
+
+      internalNetwork:
+        # Filter to find an existing network for the cluster internal network
+        # see Cluster API documentation for details
+        networkFilter:
+          name: portal-internal
+
+    controlPlane:
+      machineFlavor: vm.ska.cpu.general.small
+      machineCount: 3
+
+    nodeGroups:
+      # NOTE: Do not delete the core node group. This will
+      # ensure that CAPI and FluxCD controllers always have
+      # somewhere to run if other node groups are unavailable.
+      - name: core
+        machineFlavor: vm.ska.cpu.general.small
+        machineCount: 3
+      - name: gpu-pvc
+        machineFlavor: vm.rcp.1x.pvc.1t.quarter
+        machineCount: 1
+        kubeadmConfigSpec:
+
+          # Install Intel GPU drivers
+          preKubeadmCommands:
+            - |
+              # Adapted from https://dgpu-docs.intel.com/driver/installation.html#ubuntu
+              sudo apt update
+              sudo apt install -y gpg-agent wget
+
+              . /etc/os-release
+              if [[ ! " jammy " =~ " ${VERSION_CODENAME} " ]]; then
+                  echo "Ubuntu version ${VERSION_CODENAME} not supported"
+              else
+                  wget -qO - https://repositories.intel.com/gpu/intel-graphics.key | \
+                  sudo gpg --yes --dearmor --output /usr/share/keyrings/intel-graphics.gpg
+                  echo "deb [arch=amd64 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu ${VERSION_CODENAME}/lts/2350 unified" | \
+                  sudo tee /etc/apt/sources.list.d/intel-gpu-${VERSION_CODENAME}.list
+                  sudo apt update
+              fi
+
+              sudo apt install -y \
+                  linux-headers-$(uname -r) \
+                  linux-modules-extra-$(uname -r) \
+                  flex bison \
+                  intel-fw-gpu intel-i915-dkms xpu-smi
+
+              # Avoids reboot
+              modprobe i915
+
+          # NOTE(scott): This might be a route to simplifying the
+          # device permissions config in for JupyterHub GPU pods,
+          # but doesn't seem to work out of the box. More work
+          # needed.
+          # Fix GPU device permissions
+          # files:
+          #   - path: /etc/containerd/conf.d/device-owners.toml
+          #     content: |
+          #       [plugins]
+          #         [plugins."io.containerd.grpc.v1.cri"]
+          #         device_ownership_from_security_context = true
+          #     owner: root:root
+          #     permissions: "0644"
+
+    addons:
+      # Use the cilium CNI
+      cni:
+        type: cilium
+
+      # Enable the ingress controllers
+      ingress:
+        enabled: true
+
+      # Enable the monitoring stack
+      monitoring:
+        enabled: true
+
+      # Required for Intel device plugin operator
+      nodeFeatureDiscovery:
+        enabled: true
+
+      # Disable NVIDIA/Mellanox operators
+      nvidiaGPUOperator:
+        enabled: false
+      mellanoxNetworkOperator:
+        enabled: false
