@@ -6,7 +6,7 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod-issuer
     meta.helm.sh/release-name: conch
-    meta.helm.sh/release-namespace: default
+    meta.helm.sh/release-namespace: conch-fluxcd
 spec:
   ingressClassName: nginx
   tls:

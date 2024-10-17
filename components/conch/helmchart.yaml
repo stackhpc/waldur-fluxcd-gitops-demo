@@ -10,6 +10,4 @@ spec:
   sourceRef:
     kind: HelmRepository
     name: conch
-  type: "oci"
-  url: oci://ghcr.io/isambard-sc/charts/conch
   interval: 5m0s # Default was 1h

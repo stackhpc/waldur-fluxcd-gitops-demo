@@ -2,11 +2,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: conch-config
+  name: conch
   namespace: conch-fluxcd
 data:
   values.yaml: |
-
     config:
       issuer: "https://identity.apps.hpc.cam.ac.uk/realms/az-rcp-cloud-portal-demo"
       platforms:

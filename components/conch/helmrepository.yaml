@@ -6,5 +6,5 @@ metadata:
   namespace: conch-fluxcd
 spec:
   type: "oci"
-  url: oci://ghcr.io/isambard-sc/charts/conch
+  url: oci://ghcr.io/isambard-sc/charts
   interval: 5m0s # Default was 1h
