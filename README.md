@@ -1,203 +1,235 @@
-# Waldur FluxCD Demo
+![](Images/SJi_Image_1.png "horizontal line")
 
-This repository demonstrates how to deploy Waldur on top of a GitOps-managed Kubernetes cluster running on OpenStack.
+# Secret Rotations          FluxCD
 
-The tooling is based on the [capi-helm-fluxcd-config](https://github.com/stackhpc/capi-helm-fluxcd-config)
-repository as a template for GitOps-based Kubernetes clusters. See the base repo's README for a general
-introduction.
+This brief guide should outline all the steps needed to be able to swap out a set of secrets or credentials with FluxCD GitOps.
 
-This downstream repo adds some additional configuration for deploying an instance of Waldur on the provisioned
-cluster, which includes the required FluxCD Helm configuration for installing the
-[Waldur Helm Chart](https://artifacthub.io/packages/helm/waldur-charts/waldur) as well as some example Helm values
-for customising the Waldur installation (see `components/waldur`).
 
-To view all of the Waldur-specific additions made to the base capi-helm-fluxcd-config repo, you can check out this
-downstream repo locally and run the following:
+[Pre-requisites	1](#prerequisites1)
+[Useful Resources	](#usefulresources)
+[Applications & Software	1](#applicationssoftware1)
+[Outline	1](#outline1)
+[Cluster Maintenance	1](#clustermaintenance1)
+		[Basics of what is done in a standard secret rotation.](#basicsofwhatisdoneinastandardsecretrotation)
+[Security Threat	2](#securitythreat2)
+		[What to do in the case of a compromised secret.](#whattodointhecaseofacompromisedsecret)
+[Horizon Application Credentials	2](#horizonapplicationcredentials2)
+[Create/Delete Credentials	2](#createdeletecredentials2)
+		[How to create & delete application credentials within Horizon.](#howtocreatedeleteapplicationcredentialswithinhorizon)
+[Processing Secrets	3](#processingsecrets3)
+[Encrypting Credentials	3](#encryptingcredentials3)
+		[Using Kubeseal to encrypt the newly created credentials.	](#usingkubesealtoencryptthenewlycreatedcredentials)
+[Updating Secrets	4](#updatingsecrets4)
+		[How to rotate new secrets using FluxCD’s GitOps.](#howtorotatenewsecretsusingfluxcdsgitops)
+[Deleting Old Secrets	5](#deletingoldsecrets5)
+		[Some housekeeping steps post secret rotation. ](#somehousekeepingstepspostsecretrotation)
+[Rotating Compromised Secrets	5](#rotatingcompromisedsecrets5)
+		[Summary for the rotation of secrets posing a security threat. ](#summaryfortherotationofsecretsposingasecuritythreat)
+[Validate Configuration	7](#validateconfiguration7)
+[Sonobuoy	7](#sonobuoy7)
+		[Brief outline on validating the Kubernetes configuration. ](#briefoutlineonvalidatingthekubernetesconfiguration)
+#
 
-```
-git clone https://github.com/stackhpc/waldur-fluxcd-gitops-demo
-git remote add upstream https://github.com/stackhpc/capi-helm-fluxcd-config
-git fetch --all
-git diff upstream/main
-```
+#  \
+ \
+ \
+ \
+Pre-Requisites
 
-## Replicating this deployment example
+This document assumes that a self-managed CAPI cluster deployed with FluxCD is already configured and deployed, if not, one can be deployed by following the instructions found in [this](https://github.com/stackhpc/capi-helm-fluxcd-config) GitHub repository. \
+ \
+In addition to this, the user trying to rotate the secrets should have an account on Horizon with the necessary permissions.
 
-To deploy your own Waldur instance based on this example you should make a copy (i.e. a detached fork) of this
-repository:
+## Useful Resources
 
-```
-# Clone the repository
-git clone https://github.com/stackhpc/waldur-fluxcd-gitops-demo.git my-waldur-deployment
-cd my-waldur-deployment
+[CAPI cluster FluxCD repository](https://github.com/stackhpc/capi-helm-fluxcd-config)  \
+[Waldur FluxCD Demo repository](https://github.com/stackhpc/waldur-fluxcd-gitops-demo) \
+[CAPI Cluster debugging manual](https://github.com/azimuth-cloud/capi-helm-charts/blob/main/charts/openstack-cluster/DEBUGGING.md)
 
-# Rename the origin remote to upstream so that we can pull changes in future
-git remote rename origin upstream
+## Applications & Software \
 
-# Add the new origin remote and push the initial commit
-git remote add origin <url>
-git push -u origin main
-```
-
-You should then replace the `clusters/waldur/credentials.yaml` file with your own OpenStack application
-credential for your target cloud (see [here](https://github.com/stackhpc/capi-helm-fluxcd-config/tree/main?tab=readme-ov-file#usage)
-for details). The credentials file will be encrypted as part of the initial deployment process before
-it is committed to git.
-
-Once the appropriate credentials have been added, modify the following fields in
-`clusters/waldur/configmap.yaml` to match the desired flavours, images etc. for your target
-cloud:
-
-```
-    # Must match the name of the (sealed) secret in credentials.yaml
-    cloudCredentialsSecretName: waldur-cluster-config-credentials
-
-    kubernetesVersion: 1.29.5
-    machineImageId: f08b688e-645a-4444-a811-c181bd82cc50 # == ubuntu-jammy-kube-v1.29.5-240605-0529
-
-    clusterNetworking:
-      externalNetworkId: 57add367-d205-4030-a929-d75617a7c63e
-
-    controlPlane:
-      machineFlavor: vm.ska.cpu.general.small
-      machineCount: 3
-
-    # NOTE: Waldur is surprisingly resource hungry so it is easier
-    # to start with an initially oversized cluster and scale it down
-    # later once you have confirmed via the monitoring dashboards
-    # that a smaller cluster will suffice.
-    nodeGroups:
-      - name: group-1
-        machineFlavor: vm.ska.cpu.general.small
-        machineCount: 3
-      - name: group-2
-        machineFlavor: vm.ska.cpu.general.eighth
-        machineCount: 1
-```
-
-For a full list of available configuration options for the Kubernetes cluster, consult the capi-helm-charts
-[documentation](https://github.com/stackhpc/capi-helm-charts/tree/main/charts/openstack-cluster) and
-[values.yaml](https://github.com/stackhpc/capi-helm-charts/blob/main/charts/openstack-cluster/values.yaml).
-
-Once you are happy with your configuration, the Kubernetes cluster is ready to be deployed by following
-https://github.com/stackhpc/capi-helm-fluxcd-config/tree/main#usage. It is normal for this deployment
-to take a while (e.g. 30 minutes) since there are many steps involved in the bootstrapping process.
-
-After the initial deployment, the Waldur configuration can be modified to suit your needs. The main sources for this
-config can be found in the `components/waldur/{helmrelease,configmap}.yaml` files. The Flux controllers running
-on the deployed cluster will automatically watch the target GitHub repository for changes to the main branch, so
-adding or modifying configuration options on your deployment should be done by proposing, reviewing and merging pull
-requests in the repository.
-
-### Accessing the Waldur deployment
-
-By default the Waldur UI and API endpoints are not exposed outside of the Kubernetes cluster. An example of
-the required configuration for exposing the UI and API outside of the cluster using Kubernetes
-[Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) is included in
-`components/waldur/configmap.yaml`. The IP address in the example should be replaced by the
-external IP assigned to the OpenStack load balancer for the NGINX Ingress controller. This IP can be obtained
-with `kubectl get svc -n ingress-nginx ingress-nginx-controller`.
-
-## Adding secrets to the Waldur deployment
-
-The Waldur Helm chart configuration may need to contain some sensitive values such as OIDC client secrets,
-this can pose a challenge when all of the required configuration is maintained in a remote Git repository.
-The recommended solution is to use Kubernetes [Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets).
-The following is a 'worked example' of adding Keycloak login functionality to your Waldur deployment while
-following recommended best practices for secure secret management.
-
-First, create a client in your Keycloak for Waldur to use - see [these](https://docs.waldur.com/admin-guide/identities/keycloak/)
-Waldur docs for detailed instructions but ignore the final section on 'Configuring Waldur', this will be done
-via the Helm values instead.
-
-Next, run `cp components/waldur/{example-,}secret.yaml` to create a `secrets.yaml` file and then replace the
-Keycloak client name, secret and discovery URL variables with the values for your newly created Keycloak client.
-
-Overwrite the secret with a sealed secret using `kubeseal`:
 
 ```
-kubeseal \
-  --kubeconfig clusters/waldur/kubeconfig \
-  --format yaml \
-  --controller-name sealed-secrets \
-  --controller-namespace sealed-secrets-system \
-  --secret-file components/waldur/secret.yaml \
-  --sealed-secret-file components/waldur/secret.yaml
+This document assumes that the Kubernetes cluster’s kubeconfig is known.
 ```
+Kubeseal \
+Current CAPI cluster FluxCD config \
+Horizon account. \
+k9s (for debugging, optional) \
+ \
+**Outline**
 
-Inspecting the content of this file should now show that the secret values have been encrypted.
+The overall idea is to take advantage of Kubeseal’s encryption, allowing us to upload secrets to our repositories; meaning that after a branch containing the new secrets is merged into the branch being tracked by FluxCD, the FluxCD GitOps flow will update the current cluster deployment to reflect the newly merged branch.  \
+ \
+Although the basic outline will remain the same, there are some variations in the preliminary actions depending on the situation and reason why secrets are being rotated. The two main categories fall under **cluster maintenance** and **security threat**, and the differences in these situations will be further explained below.
 
-Next, configure Flux to include this sealed secret in the list of files that it watches by adding `secret.yaml`
-to the resources list in `components/waldur/kustomization.yaml`.
+## Cluster Maintenance
 
-Add the following content to the `valuesFrom` list in `components/waldur/helmrelease.yaml` to tell Flux that the new
-secret should be used as a source of Helm chart values:
+It is often a good idea and good security practice to rotate passwords and secrets, as it reduces the chances of them existing long enough for them to be exploited or end up in the wrong hands; often many secrets will have an expiration date precisely for this reason.
 
-```
-  - kind: Secret
-    name: waldur-keycloak-config
-    valuesKey: keycloakClientId
-    targetPath: waldur.socialAuthMethods[0].clientId
-  - kind: Secret
-    name: waldur-keycloak-config
-    valuesKey: keycloakClientSecret
-    targetPath: waldur.socialAuthMethods[0].clientSecret
-  - kind: Secret
-    name: waldur-keycloak-config
-    valuesKey: keycloakDiscoveryUrl
-    targetPath: waldur.socialAuthMethods[0].discoveryUrl
-```
+Therefore, in the case of the user simply updating secrets for the purpose of cluster maintenance it is simply enough to replace the current Kubeseal encrypted secret with an updated, manually encrypted, Kubeseal secret via a GitHub pull request and merge. Then delete the old application credential from Horizon. \
+ \
+	**Security Threat**
 
-Finally, add the non-secret sections of the required Waldur config to the rest of the Helm chart values in
-`components/waldur/configmap.yaml`:
+In the event that the existence of the secret is a cause for concern, such as the current uploaded secret being unencrypted or leaked, then the protocol is mainly the same apart from needing to delete the application credential from Horizon first before any other step. At which point the compromised secret is no longer valid and anyone using it won’t be able to do anything with it. \
+ \
+**Horizon Application Credentials**
+
+## Create/Delete Credentials
+
+The first step is to access the Horizon application credentials in order to either create a new one or to delete the old, compromised secret.
+
+Once logged into Horizon, head to the **Identity** then **Application Credentials**. From this page, it is possible to manage the secrets which authenticate operations targetted at the OpenStack system.
 
 ```
-    waldur:
-      authMethods:
-      - LOCAL_SIGNIN
-      - SOCIAL_SIGNUP
-      socialAuthMethods:
-      - label: Keycloak
-        provider: keycloak
-        # clientId: <stored-in-sealed-secret>
-        # clientSecret: <stored-in-sealed-secret>
-        # discoveryUrl: <stored-in-sealed-secret>
-        managementUrl: ""
-        protectedFields:
-        - full_name
-        - email
+If the credential’s been compromised, this is the point in which the application credential will need to be deleted.
 ```
+ \
+In the case of creating a new set of application credentials, please remember to download the **clouds.yaml** once the configuration steps are complete; this will be the only time you will be able to do so, otherwise a new set of credentials will need to be created.
 
-With all of these changes made, commit them to git and propose a pull request to the remote repository. Once
-the PR has been reviewed and merged, Flux will notice the change to the GitHub main branch and apply the new
-config to the live deployment.
+At this point, the newly created secret requires encrypting before it can be rotated in.
 
-Once the PR has merged, you can check the status of the various Flux components on the remote cluster using
-`kubectl` and the kubeconfig for your cluster (which should have been written to `clusters/waldur/kubeconfig`
-as part of the initial cluster deployment). For example, by running
+ \
+ \
+ \
+**Processing Secrets**
+
+## Encrypting New Credential
+
+Once the new secret **clouds.yaml** has been downloaded, and before going any further, it would be a good idea to rename the old **credentials.yaml** in fluxcd-config/clusters/<cluster-name>/ into something like **old-credentials.yaml **- *of course, only if the secret hasn’t already been deleted in Horizon or is suspected to be compromised*.
+
+Now a new file called **credentials.yaml** can be created in its place with the following structure: \
+
+
+`apiVersion``:`` ``v1 \
+``kind``:`` ``Secret \
+``metadata``: \
+``  ``name``:`` ``<MAKE SURE THIS MATCHES “cloudCredentialsSecretName:” IN configmap.yaml> \
+``  ``namespace``:`` ``capi-self \
+``  ``annotations``: \
+    ``# Allow the sealed secret controller to take over this secret after bootstrapping \
+``    ``sealedsecrets.bitnami.com/managed``:`` ``"``true``" \
+``stringData``: \
+``  ``clouds.yaml``:`` ``| \
+    <INSERT THE CONTENTS OF YOUR NEW SECRET’S CLOUDS.YAML, PAYING ATTENTION TO THE        \
+    INDENTATIONS> \
+`
+
+Once the newly created **clouds.yaml**’s contents have been copied over the contents of **credentials.yaml** should look like this:
+
+`apiVersion``:`` ``v1 \
+``kind``:`` ``Secret \
+``metadata``: \
+``  ``name``:`` ``<MAKE SURE THIS MATCHES “cloudCredentialsSecretName:” IN configmap.yaml> \
+``  ``namespace``:`` ``capi-self \
+``  ``annotations``: \
+    ``# Allow the sealed secret controller to take over this secret after bootstrapping \
+``    ``sealedsecrets.bitnami.com/managed``:`` ``"``true``" \
+``stringData``: \
+``  ``clouds.yaml``:`` ``| \
+    ``clouds``: \
+      ``openstack``: \
+        ``auth``: \
+          ``auth_url``: ... \
+          ``application_credential_id``: ... \
+          ``application_credential_secret``: ... \
+        ``interface``: ... \
+        ``identity_api_version``: ``3`` \
+        ``auth_type``: ... \
+`
+
+From here make sure that the terminal’s current working directory is in the same one as **credentials.yaml**, fluxcd-config/clusters/<cluster-name>/, and then run the following Kubeseal command:
 
 ```
-kubectl get -A gitrepositories.source.toolkit.fluxcd.io,kustomizations.kustomize.toolkit.fluxcd.io,helmreleases.helm.toolkit.fluxcd.io
+kubeseal --kubeconfig kubeconfig --format yaml --controller-name sealed-secrets --controller-namespace sealed-secrets-system --secret-file credentials.yaml  --sealed-secret-file encrypted-creds.yaml
 ```
-
-or by using the Flux CLI:
-
 ```
-flux get source git
-flux get kustomizations
-flux get helmrelease -n waldur
+Note that this will create a new file named encrypted-creds.yaml containing the encrypted contents and will need to be renamed to credentials.yaml. This is just to be safe, however this step can be avoided by replacing encrypted-creds.yaml with credentials.yaml in the above command.
 ```
+## Updating Secrets
 
-If the changes have synced correctly from GitHub and the `helmrelease` object is up to date but the Waldur
-login UI is still not displaying a 'Login with Keycloak' option then you may need to restart the Waldur
-pods using:
+With the new secrets encrypted it is time to change the sealed secret which is on the kubernetes cluster.
+
+The image on the right is the first sealed secret which is going to replaced. This is being viewed using the **k9s** UI.
+
+The process of changing the secret over is as simple as adding, committing and pushing the new **credentials.yaml** to the upstream GitHub repository which is being tracked by FluxCD.
 
 ```
-kubectl rollout restart deployment -n waldur
+It is highly recommended to git switch -c to a new branch when pushing the new credentials.yaml so that a pull request can be reviewed before merging to the tracked branch.
 ```
+When the new **credentials.yaml** has been merged into the FluxCD tracked repository branch, FluxCD will try to update the **sealed secret** on the self managed cluster once it recognises that there are differences between the cluster’s current configuration and the one on GitHub.
 
-A similar process can be followed for adding any other secret/sensitive configuration options required by
-Waldur.
+```
+The time interval in which FluxCD will check for these drifts in configuration is set in the cluster’s helmrelease.yaml found within the fluxcd-config/components/<cluster-name>/ directory, under the interval variable.
+```
+This should result in the **sealed secret** on the kubernetes cluster to contain the new secret. \
+ \
+ \
+ \
+**	Deleting Old Secrets ** \
+Once the sealed secret has been updated on kubernetes it is time to do some *housekeeping* by now deleting the old credentials and unnecessary files created along the way, including, but not limited to, **old-credentials.yaml** and its corresponding application credential on Horizon.
 
-Any general (i.e. non-secret) configuration should be added to the Waldur Helm chart values in
-`components/waldur/configmap.yaml`.
+By following the steps outlined in **Create/Delete Credentials** the option to delete application credentials can be found. \
+Do note that in the scenario where the secret has been compromised this should be first step completed; this is because doing so invalidates the credential posing the security threat and prevents any operations using those credentials from being authenticated. Apart from this and no longer needing to rename **credentials.yaml** to **old-credentials.yaml**, all other steps are the same.
+
+**	Rotating Compromised Secrets ** \
+As mentioned above, an application credential which is a security concern should be deleted before any other step; after which a new application credential, which will replace it, can be created.  \
+
+
+```
+Don’t forget to download the clouds.yaml file after creating the new application credential!
+```
+Due to having deleted the old application credentials there is no need to rename the **credentials.yaml** file and can instead be directly replaced with the template, plus the contents of the new application credential’s **clouds.yaml**.
+
+`apiVersion``:`` ``v1 \
+``kind``:`` ``Secret \
+``metadata``: \
+``  ``name``:`` ``<MAKE SURE THIS MATCHES “cloudCredentialsSecretName:” IN configmap.yaml> \
+``  ``namespace``:`` ``capi-self \
+``  ``annotations``: \
+    ``# Allow the sealed secret controller to take over this secret after bootstrapping \
+``    ``sealedsecrets.bitnami.com/managed``:`` ``"``true``" \
+``stringData``: \
+``  ``clouds.yaml``:`` ``| \
+    ``clouds``: \
+      ``openstack``: \
+        ``auth``: \
+          ``auth_url``: ... \
+          ``application_credential_id``: ... \
+          ``application_credential_secret``: ... \
+        ``interface``: ... \
+        ``identity_api_version``: ``3`` \
+        ``auth_type``: ... \
+`
+
+Then, much like the previous secret rotation, use Kubeseal to encrypt the new secret. This time round, the Kubeseal command below will seal the secret and overwrite **credentials.yaml** rather than create an **encrypted-creds.yaml** intermediate file.
+
+```
+kubeseal --kubeconfig kubeconfig --format yaml --controller-name sealed-secrets --controller-namespace sealed-secrets-system --secret-file credentials.yaml  --sealed-secret-file credentials.yaml
+```
+Again, this file will then be added, committed and pushed to a preferably new, GitHub branch which can then be reviewed and merged into the branch which FluxCD is tracking for changes. After which, once per interval, FluxCD will compare the current configuration with the branch on GitHub, and upon noticing any differences will attempt to update the current cluster’s configuration to reflect the changes.
+
+ \
+**Validate Configuration** \
+It is always a good idea to test your deployments for any potential risks or errors, which can lead to more issues further down the line. Therefore, it is worthwhile to validate the Kubernetes cluster with a diagnostic tool.
+
+**	Sonobuoy ** \
+The official documentation can be found [here](https://sonobuoy.io/docs/v0.57.1/), however a brief outline will be explained below.
+
+Once Sonobuoy has been installed, and making sure that the terminal’s working directory is set to the fluxcd-config directory, as well as, the appropriate cluster’s **kubeconfig** being exported; a **single** default conformance test can be run with:
+
+```
+sonobuoy run --wait --mode quick
+```
+Once complete, export the results with:
+
+```
+results=$(sonobuoy retrieve)
+```
+Then inspect them with:
+
+```
+sonobuoy results $results
+```
+This will display various information, however, all that is of interest at this point is the details under **Run Details** which should, hopefully, report 100% **Node** and **Pod** health.  \
+The **results** command has many useful options, for which information can be found [here](https://sonobuoy.io/docs/v0.57.1/results/).
