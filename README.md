@@ -148,6 +148,10 @@ secret should be used as a source of Helm chart values:
     targetPath: waldur.socialAuthMethods[0].discoveryUrl
 ```
 
+For clarity, ```name``` refers to the string corresponding to the ```name``` variable found within
+```secret.yaml```'s ```metadata``` section, ```valuesKey``` is referring to the name of the variable
+in ```secret.yaml``` to which the secret has been assigned to,
+
 Finally, add the non-secret sections of the required Waldur config to the rest of the Helm chart values in
 `components/waldur/configmap.yaml`:
 
