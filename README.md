@@ -90,6 +90,8 @@ In the event that the existence of a secret is a cause for concern, such as the 
 
 The first step is to access the Horizon application credentials in order to either create a new one or to delete the old, compromised secret.
 
+Application credentials can be managed through the use of the openstack CLI which can be found [here](https://docs.openstack.org/keystone/2024.2/user/application_credentials.html), however, for the sake of simplicity, the following steps will outline how to do this through the Horizon dashboard user interface.
+
 Once logged into Horizon, head to the **Identity** tab on the left, then **Application Credentials**. From this page, it is possible to manage the secrets which authenticate operations targetted at the OpenStack system.
 
 | If the credential’s been compromised, this is the point in which the application credential will need to be deleted. |
@@ -116,7 +118,7 @@ metadata:
   name: <MAKE SURE THIS MATCHES “cloudCredentialsSecretName:” IN configmap.yaml>
   namespace: capi-self
   annotations:
-    *# Allow the sealed secret controller to take over this secret after bootstrapping*
+    # Allow the sealed secret controller to take over this secret after bootstrapping
     sealedsecrets.bitnami.com/managed: "true"
 stringData:
   clouds.yaml: |
@@ -133,7 +135,7 @@ metadata:
   name: <MAKE SURE THIS MATCHES “cloudCredentialsSecretName:” IN configmap.yaml>
   namespace: capi-self
   annotations:
-    *# Allow the sealed secret controller to take over this secret after bootstrapping*
+    # Allow the sealed secret controller to take over this secret after bootstrapping
     sealedsecrets.bitnami.com/managed: "true"
 stringData:
   clouds.yaml: |
@@ -161,7 +163,7 @@ From here make sure that the terminal’s current working directory is in the sa
 
 With the new secrets encrypted it is time to change the sealed secret which is on the kubernetes cluster.
 
-The image on the right is the first sealed secret which is going to replaced. This is being viewed using the **k9s** UI.
+<!-- The image on the right is the first sealed secret which is going to replaced. This is being viewed using the **k9s** UI. -->
 
 The process of changing the secret over is as simple as adding, committing and pushing the new **credentials.yaml** to the upstream GitHub repository which is being tracked by FluxCD.
 
@@ -170,7 +172,7 @@ The process of changing the secret over is as simple as adding, committing and p
 
 When the new **credentials.yaml** has been merged into the FluxCD tracked repository branch, FluxCD will try to update the **sealed secret** on the self managed cluster once it recognises that there are differences between the cluster’s current configuration and the one on GitHub.
 
-| The time interval in which FluxCD will check for these *drifts* in configuration is set in the cluster’s helmrelease.yaml found within the `fluxcd-config/components/<cluster-name>/` directory, under the `interval` variable. |
+| The time interval in which FluxCD will check for these *drifts between configurations* is set in the cluster’s **helmrelease.yaml** found within the `fluxcd-config/components/<cluster-name>/` directory, under the `interval` variable. |
 | :---- |
 
 This should result in the **sealed secret** on the kubernetes cluster to contain the new secret.
@@ -182,7 +184,7 @@ Once the sealed secret has been updated on kubernetes it is time to do some *hou
 
 By following the steps outlined in **Create/Delete Credentials**, the option to delete application credentials can be found.
 
-Do note that in the scenario where the secret has been compromised, this should be the first step completed; this is because doing so invalidates the credential posing the security threat and prevents any operations using those credentials from being authenticated. Apart from this and no longer needing to rename **credentials.yaml** to **old-credentials.yaml**, all other steps are the same.
+Do note that in the scenario where the secret has been compromised, this should be the first step completed; this is because doing so invalidates the credential posing the security threat and prevents any operations using those credentials from being authenticated. Apart from this, and no longer needing to rename **credentials.yaml** to **old-credentials.yaml**, all other steps are the same.
 
 <a id="rotating-compromised-secrets-link"></a>
 ###	**Rotating Compromised Secrets**
@@ -200,7 +202,7 @@ metadata:
   name: <MAKE SURE THIS MATCHES “cloudCredentialsSecretName:” IN configmap.yaml>
   namespace: capi-self
   annotations:
-    *# Allow the sealed secret controller to take over this secret after bootstrapping*
+    # Allow the sealed secret controller to take over this secret after bootstrapping
     sealedsecrets.bitnami.com/managed: "true"
 stringData:
   clouds.yaml: |
@@ -215,7 +217,7 @@ stringData:
         auth_type: ...
 ```
 
-Then, much like the previous secret rotation, use Kubeseal to encrypt the new secret. This time round, the Kubeseal command below will seal the secret and overwrite **credentials.yaml** rather than create an **encrypted-creds.yaml** intermediate file.
+Then, much like the previous secret rotation, use Kubeseal to encrypt the new secret. This time round, the Kubeseal command below will seal the secret and overwrite **credentials.yaml** rather than create an intermediate **encrypted-creds.yaml** file.
 
 | kubeseal \--kubeconfig kubeconfig \--format yaml \--controller-name sealed-secrets \--controller-namespace sealed-secrets-system \--secret-file credentials.yaml  \--sealed-secret-file credentials.yaml |
 | :---- |
@@ -247,5 +249,6 @@ Then inspect them with:
 | sonobuoy results $results |
 | :---- |
 
-This will display various information, however, all that is of interest at this point is the details under **Run Details** which should, hopefully, report 100% **Node** and **Pod** health.
-The **results** command has many useful options, for which information can be found [here](https://sonobuoy.io/docs/v0.57.1/results/).
+This will display various information, however, all that is of interest at this point are the details under **Run Details** which should, hopefully, report 100% **Node** and **Pod** health.
+
+The ```results``` command has many useful options, for which further information can be found [here](https://sonobuoy.io/docs/v0.57.1/results/).
