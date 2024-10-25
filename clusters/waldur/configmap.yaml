@@ -29,10 +29,10 @@ data:
     nodeGroups:
       - name: group-1
         machineFlavor: vm.ska.cpu.general.small
-        machineCount: 3
+        machineCount: 4
       - name: group-2
         machineFlavor: vm.ska.cpu.general.eighth
-        machineCount: 1
+        machineCount: 2
 
     addons:
       # Use the cilium CNI
